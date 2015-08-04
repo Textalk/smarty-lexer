@@ -180,14 +180,14 @@ class PHP_LexerGenerator_Parser#line 171 "Parser.php"
     private $token;
     private $value;
     private $line;
-    private $matchlongest;
+    private $patternFlags;
     private $_regexLexer;
     private $_regexParser;
     private $_patternIndex = 0;
     private $_outRuleIndex = 1;
-    private $caseinsensitive;
-    private $patternFlags;
-    private $unicode;
+    private $caseinsensitive = false;
+    private $matchlongest = false;
+    private $unicode = false;
 
     public $transTable = array(
         1 => self::PHPCODE,
@@ -348,7 +348,7 @@ class PHP_LexerGenerator_Parser#line 171 "Parser.php"
         $pattern .= '/' . $this->patternFlags;
         fwrite($this->out, '
         if (!isset($this->yy_global_pattern' . $ruleindex . ')) {
-            $this->yy_global_pattern' . $ruleindex . ' = "' . $pattern . 'isS";
+            $this->yy_global_pattern' . $ruleindex . ' = "' . $pattern . 'sS";
         }
         if (' . $this->counter . ' >=  strlen(' . $this->input . ')) {
             return false; // end of input
@@ -461,6 +461,11 @@ class PHP_LexerGenerator_Parser#line 171 "Parser.php"
     public function makeCaseInsensitve($string)
     {
         return preg_replace('/[a-z]/ie', "'[\\0'.strtoupper('\\0').']'", strtolower($string));
+    }
+
+    public function toBool($string)
+    {
+        return in_array(strtolower($string), array('true', 'yes', '1'));
     }
 
     public function outputRules($rules, $statename)
@@ -1587,8 +1592,14 @@ static public $yy_action = array(
     foreach ($this->yystack[$this->yyidx + -1]->minor as $pi) {
         if (isset($expected[$pi['pi']])) {
             $this->{$pi['pi']} = $pi['definition'];
+            if ($pi['pi'] == 'caseinsensitive') {
+                $this->caseinsensitive = $this->toBool($pi['definition']);
+            }
             if ($pi['pi'] == 'matchlongest') {
-                $this->matchlongest = true;
+                $this->matchlongest = $this->toBool($pi['definition']);
+            }
+            if ($pi['pi'] == 'unicode') {
+                $this->unicode = $this->toBool($pi['definition']);
             }
             continue;
         }

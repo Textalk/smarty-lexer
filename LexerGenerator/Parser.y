@@ -88,14 +88,14 @@ require_once 'PHP/LexerGenerator/Exception.php';
     private $token;
     private $value;
     private $line;
-    private $matchlongest;
+    private $patternFlags;
     private $_regexLexer;
     private $_regexParser;
     private $_patternIndex = 0;
     private $_outRuleIndex = 1;
-    private $caseinsensitive;
-    private $patternFlags;
-    private $unicode;
+    private $caseinsensitive = false;
+    private $matchlongest = false;
+    private $unicode = false;
 
     public $transTable = array(
         1 => self::PHPCODE,
@@ -367,6 +367,11 @@ require_once 'PHP/LexerGenerator/Exception.php';
         return preg_replace('/[a-z]/ie', "'[\\0'.strtoupper('\\0').']'", strtolower($string));
     }
 
+    public function toBool($string)
+    {
+        return in_array(strtolower($string), array('true', 'yes', '1'));
+    }
+
     function outputRules($rules, $statename)
     {
         if (!$statename) {
@@ -621,8 +626,14 @@ declarations(A) ::= processing_instructions(B) pattern_declarations(C). {
     foreach (B as $pi) {
         if (isset($expected[$pi['pi']])) {
             $this->{$pi['pi']} = $pi['definition'];
+            if ($pi['pi'] == 'caseinsensitive') {
+                $this->caseinsensitive = $this->toBool($pi['definition']);
+            }
             if ($pi['pi'] == 'matchlongest') {
-                $this->matchlongest = true;
+                $this->matchlongest = $this->toBool($pi['definition']);
+            }
+            if ($pi['pi'] == 'unicode') {
+                $this->unicode = $this->toBool($pi['definition']);
             }
             continue;
         }
